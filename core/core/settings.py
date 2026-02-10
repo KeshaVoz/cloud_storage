@@ -61,7 +61,7 @@ ROOT_URLCONF = 'core.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -133,7 +133,13 @@ CACHES = {
         'LOCATION': os.environ['REDIS_URL'],
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'PASSWORD': os.environ['REDIS_PASSWORD'],
         },
-    'KEY_PREFIX': 'cloud_storage',
+        'KEY_PREFIX': 'cloud_storage',
     }
 }
+
+AUTH_USER_MODEL = 'users.User'
+
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+SESSION_CACHE_ALIAS = 'default'
