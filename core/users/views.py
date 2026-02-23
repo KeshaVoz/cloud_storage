@@ -3,15 +3,12 @@ from django.contrib.auth import login, logout
 from .forms import SignUpForm, LoginForm
 
 
-def index(request):
-    return render(request, 'users/index.html',)
-
 def login_view(request):
     if request.method == 'POST':
         form = LoginForm(request, data=request.POST)
         if form.is_valid():
             login(request, form.get_user())
-            return redirect('index')
+            return redirect('storage:root')
     else:
         form = LoginForm()
     return render(request, 'users/login.html', {'form': form})
@@ -28,7 +25,7 @@ def register_view(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
-            return redirect('index')
+            return redirect('storage:root')
     else:
         form = SignUpForm()
     return render(request, 'users/register.html', {'form': form})
