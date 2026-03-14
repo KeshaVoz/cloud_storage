@@ -152,9 +152,6 @@ AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
 AWS_S3_ENDPOINT_URL = os.getenv('AWS_S3_ENDPOINT_URL')
 AWS_S3_USE_SSL = os.getenv('AWS_S3_USE_SSL', 'False').lower() == 'true'
 AWS_DEFAULT_ACL = os.getenv('AWS_DEFAULT_ACL')
-<<<<<<< Updated upstream
-AWS_S3_VERIFY = os.getenv('AWS_S3_VERIFY', 'False').lower() == 'true'
-=======
 AWS_S3_VERIFY = os.getenv('AWS_S3_VERIFY', 'False').lower() == 'true'
 
 MEDIA_URL = '/media/'
@@ -163,4 +160,3 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  
 
->>>>>>> Stashed changes

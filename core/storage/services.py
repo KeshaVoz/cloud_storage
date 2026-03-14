@@ -1,3 +1,4 @@
+from datetime import time
 import io
 import os
 import zipfile
@@ -21,7 +22,12 @@ class MinIOStorageService:
             verify=getattr(settings, 'AWS_S3_VERIFY', False),
         )
         self.bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', 'user-files')
+        try:
+            self.s3_client.head_bucket(Bucket=self.bucket_name)
+        except:
+            self.s3_client.create_bucket(Bucket=self.bucket_name)
 
+    
     def list_objects_in_current_dir(self, prefix):
         dirs = set()
         files = []
