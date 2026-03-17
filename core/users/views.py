@@ -4,6 +4,9 @@ from .forms import SignUpForm, LoginForm
 
 
 def login_view(request):
+    if request.user.is_authenticated:
+        return redirect('storage:root')
+    
     if request.method == 'POST':
         form = LoginForm(request, data=request.POST)
         if form.is_valid():
@@ -20,6 +23,9 @@ def logout_view(request):
 
 
 def register_view(request):
+    if request.user.is_authenticated:
+        return redirect('storage:root')
+    
     if request.method == 'POST':
         form = SignUpForm(request.POST)
         if form.is_valid():
