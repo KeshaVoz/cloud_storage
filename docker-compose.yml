@@ -1,6 +1,6 @@
 services:
   frontend:
-    image: keshavoznesensky/cloud-frontend:1.0.0  
+    image: keshavoznesensky/cloud-frontend:1.0.6  
     ports:
       - "80:80"
     depends_on:
