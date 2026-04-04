@@ -4,8 +4,7 @@ services:
     ports:
       - "80:80"
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
   db:
     image: postgres:15-alpine
     env_file:
@@ -78,12 +77,6 @@ services:
     networks:
       - backend
     restart: unless-stopped
-    healthcheck:  
-      test: ["CMD-SHELL", "curl -f http://localhost:8000/admin/ || exit 1"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-      start_period: 30s
    
 networks:
   backend:

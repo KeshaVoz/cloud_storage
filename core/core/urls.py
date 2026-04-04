@@ -17,10 +17,12 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 
+from core.views import health_check
 from storage.views import DirectoryView, ResourceView
 from users.views import UserProfileAPIView
 
 urlpatterns = [
+    path('health', health_check, name='health'),
     path('admin/', admin.site.urls),
     path('api/auth/', include('users.urls', namespace='users')),
     path('api/user/me/', UserProfileAPIView.as_view(), name="api-profile"),
