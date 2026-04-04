@@ -3,14 +3,10 @@ from . import views
 
 app_name = 'storage'
 
+
 urlpatterns = [
-    path('', views.root, name='root'),
-    path('upload_files/', views.upload_files, name='upload_files'),
-    path('upload_folder/', views.upload_folder, name='upload_folder'),
-    path('create_folder/', views.create_folder, name='create_folder'),
-    path('rename_file/', views.rename_file, name='rename_file'),
-    path('delete_file/', views.delete_file, name='delete_file'),
-    path('download/', views.download_file, name='download_file'),
-    path('download_folder/', views.download_folder, name='download_folder'),
-    path('search/', views.search_files, name='search'),
+    path('', views.ResourceView.as_view(), name='api-resource'),
+    path('download/', views.DownloadView.as_view(), name='api-download'),  
+    path('move/', views.MoveView.as_view(), name='api-move'),              
+    path('search/', views.SearchView.as_view(), name='api-search'),        
 ]

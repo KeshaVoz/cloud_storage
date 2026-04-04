@@ -17,8 +17,16 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 
+from storage.views import DirectoryView, ResourceView
+from users.views import UserProfileAPIView
+
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('users.urls')),
-    path('', include('storage.urls')),
+    path('api/auth/', include('users.urls', namespace='users')),
+    path('api/user/me/', UserProfileAPIView.as_view(), name="api-profile"),
+    path('api/directory', DirectoryView.as_view(), name='api-directory-no-slash'),
+    path('api/directory/', DirectoryView.as_view(), name='api-directory'),
+    path('api/resource', ResourceView.as_view(), name='api-resource-no-slash'), 
+    path('api/resource/', include('storage.urls', namespace='storage')),
 ]
+

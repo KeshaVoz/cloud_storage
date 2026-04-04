@@ -1,110 +1,147 @@
-import json
-import os
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
-from django.http import HttpResponse
-from django.views.decorators.http import require_http_methods
-from .utils import create_breadcrumbs, redirect_back_or_root
-from .services import FileSystemService
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.parsers import FormParser, MultiPartParser
+from django.http import FileResponse
+from .serializers import ResourceSerializer, MoveRequestSerializer
+from .services.filesystem_service import FileSystemService
+from .exceptions import ValidationError
 
 
-@login_required
-def root(request):
-    service = FileSystemService(request.user)
-    path = request.GET.get('path', '').strip('/')
-    data = service.list_objects_in_current_dir(path)
-    breadcrumbs = create_breadcrumbs(path) if path else []
-    context = {
-        'path': path,
-        'breadcrumbs': breadcrumbs,
-        'dirs': data.get('dirs', []),
-        'files': data.get('files', []),
-    }
-    return render(request, 'storage/root.html', context)
+class DirectoryView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get(self, request):
+        path = request.query_params.get('path', '')
+        
+        fs = FileSystemService(request.user)
+        data = fs.search.list_directory(path)
+        
+        return Response(ResourceSerializer(data, many=True).data)
+
+    def post(self, request):
+        path = request.query_params.get('path')
+        if not path:
+            raise ValidationError('path is required')
+        
+        fs = FileSystemService(request.user)
+        data = fs.folders.create(path)
+        
+        return Response(ResourceSerializer(data).data, status=status.HTTP_201_CREATED)
 
 
-@login_required
-@require_http_methods(['POST'])
-def upload_files(request):
-    service = FileSystemService(request.user)
-    path = request.POST.get('path', '').strip('/')
-    files = request.FILES.getlist('file')
-    service.upload_files(files, path)
-    return redirect_back_or_root(request)
+class ResourceView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get(self, request):
+        path = request.query_params.get('path')
+        if not path:
+            raise ValidationError('path is required')
+        
+        fs = FileSystemService(request.user)
+        is_dir = path.endswith('/')
+        info = fs.search.build_info(path, is_dir)
+        
+        return Response(ResourceSerializer(info).data)
+
+    def delete(self, request):
+        path = request.query_params.get('path')
+        if not path:
+            raise ValidationError('path is required')
+        
+        fs = FileSystemService(request.user)
+        is_dir = path.endswith('/')
+        
+        if is_dir:
+            fs.folders.delete(path)
+        else:
+            fs.files.delete(path)
+        
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def post(self, request):
+        files = request.FILES.getlist('object')
+        base_path = request.data.get('path', '')
+        
+        if not files:
+            raise ValidationError('No files provided')
+        
+        fs = FileSystemService(request.user)
+        uploaded = []
+        
+        for f in files:
+            data = fs.files.upload(
+                relative_path=f.name,
+                file_obj=f,
+                base_path=base_path
+            )
+            uploaded.append(data)
+        
+        return Response(
+            ResourceSerializer(uploaded, many=True).data,
+            status=status.HTTP_201_CREATED
+        )
 
 
-@login_required
-@require_http_methods(['POST'])
-def upload_folder(request):
-    service = FileSystemService(request.user)
-    path = request.POST.get('path', '').strip('/')
-    folder_json = request.POST.get('folder_json', '{}')
-    data = json.loads(folder_json)
-    files = request.FILES.getlist('folder')
-    service.upload_folder(data, files, path)
-    return redirect_back_or_root(request)
+class DownloadView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        path = request.query_params.get('path')
+        if not path:
+            raise ValidationError('path is required')
+        
+        fs = FileSystemService(request.user)
+        
+        if path.endswith('/'):
+            zip_buffer = fs.folders.download_as_zip(path)
+            response = FileResponse(zip_buffer, as_attachment=True, filename='folder.zip')
+            response['Content-Type'] = 'application/octet-stream'
+            return response
+        else:
+            stream = fs.files.download(path)
+            filename = path.split('/')[-1]
+            response = FileResponse(stream, as_attachment=True, filename=filename)
+            response['Content-Type'] = 'application/octet-stream'
+            return response
 
 
-@login_required
-@require_http_methods(['POST'])
-def create_folder(request):
-    service = FileSystemService(request.user)
-    path = request.POST.get('path', '').strip()
-    new_folder_name = request.POST.get('new_folder_name', '').strip()
-    service.create_folder(new_folder_name, path)
-    return redirect_back_or_root(request)
+class MoveView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        from_path = request.query_params.get('from')
+        to_path = request.query_params.get('to')
+        
+        serializer = MoveRequestSerializer(data={'from_path': from_path, 'to_path': to_path})
+        serializer.is_valid(raise_exception=True)  
+        
+        from_path = serializer.validated_data['from_path']
+        to_path = serializer.validated_data['to_path']
+        
+        fs = FileSystemService(request.user)
+        is_dir = from_path.endswith('/')
+        
+        if is_dir:
+            data = fs.folders.move(from_path, to_path)
+        else:
+            data = fs.files.move(from_path, to_path)
+        
+        return Response(ResourceSerializer(data).data)
 
 
-@login_required
-@require_http_methods(['POST'])
-def rename_file(request):
-    service = FileSystemService(request.user)
-    path = request.POST.get('path', '').strip()
-    new_name = request.POST.get('new_name', '').strip()
-    service.rename_file(new_name, path)
-    return redirect_back_or_root(request)
+class SearchView(APIView):
+    permission_classes = [IsAuthenticated]
 
-
-@login_required
-@require_http_methods(['POST'])
-def delete_file(request):
-    service = FileSystemService(request.user)
-    path = request.POST.get('path', '').strip()
-    service.delete_file(path)
-    return redirect_back_or_root(request)
- 
- 
-@login_required
-def download_file(request):
-    service = FileSystemService(request.user)
-    path = request.GET.get('path', '').strip()
-    file_content = service.get_file(path)
-    response = HttpResponse(file_content, content_type='application/octet-stream')
-    filename = os.path.basename(path)
-    response['Content-Disposition'] = f'attachment; filename="{filename}"'
-    return response
- 
-
-@login_required
-def search_files(request):
-    service = FileSystemService(request.user)
-    query = request.GET.get('query', '').strip()
-    all_files = service.list_dir_recursive()
-    filter = query.lower()
-    filtered = service.filter_files(all_files, filter)
-    context = {
-        'query': query,
-        'results': filtered,
-    }
-    return render(request, 'storage/search.html', context)
-
-
-@login_required
-def download_folder(request):
-    service = FileSystemService(request.user)
-    path = request.GET.get('path', '').strip('/')
-    zip_buffer = service.get_folder_as_zip(path)
-    filename = f'{os.path.basename(path)}.zip'
-    response = HttpResponse(zip_buffer.getvalue(), content_type='application/zip')
-    response['Content-Disposition'] = f'attachment; filename="{filename}"'
-    return response
+    def get(self, request):
+        query = request.query_params.get('query')
+        if not query or not query.strip():
+            raise ValidationError('Search query is required')
+        
+        fs = FileSystemService(request.user)
+        results = fs.search.search(query)
+        
+        return Response(ResourceSerializer(results, many=True).data)

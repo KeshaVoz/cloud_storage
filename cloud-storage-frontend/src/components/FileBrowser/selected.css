@@ -1,0 +1,27 @@
+.moveable-line {
+
+    opacity: 0;
+}
+
+.moveable-area {
+    opacity: 0;
+}
+
+.moveable-direction {
+
+    opacity: 0;
+}
+
+.moveable-area-pieces {
+
+    opacity: 0;
+}
+
+.moveable-control {
+
+    opacity: 0;
+}
+
+.moveable-origin {
+    opacity: 0;
+}

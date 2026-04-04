@@ -1,37 +1,56 @@
-from django.shortcuts import render, redirect
+from rest_framework.views import APIView
+from rest_framework.generics import GenericAPIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth import login, logout
-from .forms import SignUpForm, LoginForm
+from .serializers import LoginSerializer, RegisterSerializer
 
 
-def login_view(request):
-    if request.user.is_authenticated:
-        return redirect('storage:root')
-    
-    if request.method == 'POST':
-        form = LoginForm(request, data=request.POST)
-        if form.is_valid():
-            login(request, form.get_user())
-            return redirect('storage:root')
-    else:
-        form = LoginForm()
-    return render(request, 'users/login.html', {'form': form})
+class LoginAPIView(GenericAPIView):
+    serializer_class = LoginSerializer
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        user = serializer.validated_data['user']
+        login(request, user)  
+        
+        return Response({
+            'username': user.username,
+        }, status=status.HTTP_200_OK)
 
 
-def logout_view(request):
-    logout(request)
-    return redirect('login')
+class RegisterAPIView(GenericAPIView):
+    serializer_class = RegisterSerializer
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        user = serializer.save()
+        login(request, user) 
+        
+        return Response({
+            'username': user.username,
+        }, status=status.HTTP_201_CREATED)
 
 
-def register_view(request):
-    if request.user.is_authenticated:
-        return redirect('storage:root')
-    
-    if request.method == 'POST':
-        form = SignUpForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)
-            return redirect('storage:root')
-    else:
-        form = SignUpForm()
-    return render(request, 'users/register.html', {'form': form})
+class LogoutAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        logout(request)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class UserProfileAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response({
+            'username': request.user.username,
+        })
