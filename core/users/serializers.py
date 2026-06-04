@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth import authenticate, get_user_model
 from typing import Any
 from django.contrib.auth.models import User as UserType
+from rest_framework.validators import UniqueValidator
 
 
 User = get_user_model()
@@ -31,9 +32,9 @@ class LoginSerializer(serializers.Serializer):
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
     username = serializers.CharField(
-        min_length=3,
-        validators=[serializers.validators.UniqueValidator(queryset=User.objects.all(), message="Username is already taken")]
-    )
+    min_length=3,
+    validators=[UniqueValidator(queryset=User.objects.all(), message="Username is already taken")]
+)
 
     class Meta:
         model = User
