@@ -58,7 +58,7 @@ services:
     restart: unless-stopped
 
   backend:
-    image: keshavoznesensky/cloud-backend:1.1.1
+    image: keshavoznesensky/cloud-backend:1.1.2
     env_file:
       - .env
     environment:
