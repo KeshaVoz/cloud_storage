@@ -11,7 +11,7 @@ class LoginAPIView(GenericAPIView):
     serializer_class = LoginSerializer
     permission_classes = [AllowAny]
 
-    def post(self, request):
+    def post(self, request) -> Response:
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
@@ -27,7 +27,7 @@ class RegisterAPIView(GenericAPIView):
     serializer_class = RegisterSerializer
     permission_classes = [AllowAny]
 
-    def post(self, request):
+    def post(self, request) -> Response:
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
@@ -42,7 +42,7 @@ class RegisterAPIView(GenericAPIView):
 class LogoutAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
+    def post(self, request) -> Response:
         logout(request)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -50,7 +50,7 @@ class LogoutAPIView(APIView):
 class UserProfileAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
+    def get(self, request) -> Response:
         return Response({
             'username': request.user.username,
         })

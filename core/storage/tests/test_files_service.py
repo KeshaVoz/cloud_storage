@@ -1,10 +1,13 @@
 import pytest
 from io import BytesIO
 from storage.exceptions import ConflictError, ResourceNotFoundError
+from django.contrib.auth.models import User
+from typing import Any
+from pytest_mock import MockerFixture
 
 
 class TestUserFileServiceUpload:
-    def test_upload_file_creates_in_minio(self, user, mocker):
+    def test_upload_file_creates_in_minio(self, user: User, mocker: MockerFixture) -> None:
         mock_minio = mocker.MagicMock()
         mock_minio.search.exists.return_value = False
         
@@ -23,7 +26,7 @@ class TestUserFileServiceUpload:
         assert result['size'] == 12
         mock_minio.files.upload.assert_called_once()
 
-    def test_upload_file_raises_conflict_if_exists(self, user, mocker):
+    def test_upload_file_raises_conflict_if_exists(self, user: User, mocker: MockerFixture) -> None:
         mock_minio = mocker.MagicMock()
         mock_minio.search.exists.return_value = True
         
@@ -41,7 +44,7 @@ class TestUserFileServiceUpload:
         assert 'already exists' in str(exc_info.value.message).lower()
         mock_minio.files.upload.assert_not_called()
 
-    def test_upload_file_with_subdirectory(self, user, mocker):
+    def test_upload_file_with_subdirectory(self, user: User, mocker: MockerFixture) -> None:
         mock_minio = mocker.MagicMock()
         mock_minio.search.exists.return_value = False
         
@@ -59,7 +62,7 @@ class TestUserFileServiceUpload:
         assert result['path'] == 'root/subdir/'
         mock_minio.files.upload.assert_called_once()
 
-    def test_upload_file_with_unicode_name(self, user, mocker):
+    def test_upload_file_with_unicode_name(self, user: User, mocker: MockerFixture) -> None:
         mock_minio = mocker.MagicMock()
         mock_minio.search.exists.return_value = False
     
@@ -74,7 +77,7 @@ class TestUserFileServiceUpload:
     
         assert result['name'] == 'file.txt'
 
-    def test_upload_empty_file(self, user, mocker):
+    def test_upload_empty_file(self, user: User, mocker: MockerFixture) -> None:
         mock_minio = mocker.MagicMock()
         mock_minio.search.exists.return_value = False
     
@@ -93,7 +96,7 @@ class TestUserFileServiceUpload:
     
 
 class TestUserFileServiceMove:
-    def test_move_file_renames_successfully(self, user, mocker):
+    def test_move_file_renames_successfully(self, user: User, mocker: MockerFixture) -> None:
         mock_minio = mocker.MagicMock()
         mock_minio.search.exists.side_effect = lambda key: key.endswith('old.txt')
         
@@ -107,7 +110,7 @@ class TestUserFileServiceMove:
         mock_minio.files.copy.assert_called_once()
         mock_minio.files.delete.assert_called_once()
 
-    def test_move_file_raises_conflict_if_target_exists(self, user, mocker):
+    def test_move_file_raises_conflict_if_target_exists(self, user: User, mocker: MockerFixture) -> None:
         mock_minio = mocker.MagicMock()
         mock_minio.search.exists.side_effect = lambda key: key.endswith('existing.txt') or key.endswith('old.txt')
         
@@ -120,7 +123,7 @@ class TestUserFileServiceMove:
         
         assert 'already exists' in str(exc_info.value.message).lower()
 
-    def test_move_file_raises_not_found_if_source_missing(self, user, mocker):
+    def test_move_file_raises_not_found_if_source_missing(self, user: User, mocker: MockerFixture) -> None:
         mock_minio = mocker.MagicMock()
         mock_minio.search.exists.return_value = False
         
@@ -131,7 +134,7 @@ class TestUserFileServiceMove:
         with pytest.raises(ResourceNotFoundError):
             file_service.move('nonexistent.txt', 'new.txt')
 
-    def test_move_file_case_change(self, user, mocker):
+    def test_move_file_case_change(self, user: User, mocker: MockerFixture) -> None:
         mock_minio = mocker.MagicMock()
         mock_minio.search.exists.side_effect = lambda key: key.endswith('File.txt')
     
@@ -144,7 +147,7 @@ class TestUserFileServiceMove:
 
 
 class TestUserFileServiceDelete:
-    def test_delete_file_removes_from_minio(self, user, mocker):
+    def test_delete_file_removes_from_minio(self, user: User, mocker: MockerFixture) -> None:
         mock_minio = mocker.MagicMock()
         
         from storage.services.filesystem_service import UserFileService
@@ -158,7 +161,7 @@ class TestUserFileServiceDelete:
 
 
 class TestUserFileServiceDownload:
-    def test_download_file_returns_stream(self, user, mocker):
+    def test_download_file_returns_stream(self, user: User, mocker: MockerFixture) -> None:
         mock_minio = mocker.MagicMock()
         mock_stream = BytesIO(b'downloaded content')
         mock_minio.files.download.return_value = mock_stream
@@ -172,7 +175,7 @@ class TestUserFileServiceDownload:
         assert stream.read() == b'downloaded content'
         mock_minio.files.download.assert_called_once()
     
-    def test_download_nonexistent_file(self, user, mocker):
+    def test_download_nonexistent_file(self, user: User, mocker: MockerFixture) -> None:
         mock_minio = mocker.MagicMock()
         mock_minio.files.download.side_effect = ResourceNotFoundError('File not found')
     

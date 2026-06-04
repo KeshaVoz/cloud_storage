@@ -13,7 +13,7 @@ class DirectoryView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
 
-    def get(self, request):
+    def get(self, request) -> Response:
         path = request.query_params.get('path', '')
         
         fs = FileSystemService(request.user)
@@ -21,7 +21,7 @@ class DirectoryView(APIView):
         
         return Response(ResourceSerializer(data, many=True).data)
 
-    def post(self, request):
+    def post(self, request) -> Response:
         path = request.query_params.get('path')
         if not path:
             raise ValidationError('path is required')
@@ -36,7 +36,7 @@ class ResourceView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
 
-    def get(self, request):
+    def get(self, request) -> Response:
         path = request.query_params.get('path')
         if not path:
             raise ValidationError('path is required')
@@ -47,7 +47,7 @@ class ResourceView(APIView):
         
         return Response(ResourceSerializer(info).data)
 
-    def delete(self, request):
+    def delete(self, request) -> Response:
         path = request.query_params.get('path')
         if not path:
             raise ValidationError('path is required')
@@ -62,7 +62,7 @@ class ResourceView(APIView):
         
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    def post(self, request):
+    def post(self, request) -> Response:
         files = request.FILES.getlist('object')
         base_path = request.data.get('path', '')
         
@@ -89,7 +89,7 @@ class ResourceView(APIView):
 class DownloadView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
+    def get(self, request) -> FileResponse:
         path = request.query_params.get('path')
         if not path:
             raise ValidationError('path is required')
@@ -112,7 +112,7 @@ class DownloadView(APIView):
 class MoveView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
+    def get(self, request) -> Response:
         from_path = request.query_params.get('from')
         to_path = request.query_params.get('to')
         
@@ -136,7 +136,7 @@ class MoveView(APIView):
 class SearchView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
+    def get(self, request) -> Response:
         query = request.query_params.get('query')
         if not query or not query.strip():
             raise ValidationError('Search query is required')

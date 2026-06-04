@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from .exceptions import ValidationError
+from typing import Any
+
 
 class ResourceSerializer(serializers.Serializer):
     name = serializers.CharField()
@@ -8,7 +10,7 @@ class ResourceSerializer(serializers.Serializer):
     type = serializers.ChoiceField(choices=[('FILE', 'FILE'), ('DIRECTORY', 'DIRECTORY')])
     lastModified = serializers.DateTimeField(required=False, allow_null=True, source='last_modified')
 
-    def to_representation(self, instance):
+    def to_representation(self, instance: Any) -> dict[str, Any]:
         data = super().to_representation(instance)
         return {
             'name': data.get('name'),
@@ -23,7 +25,7 @@ class MoveRequestSerializer(serializers.Serializer):
     from_path = serializers.CharField(required=True)
     to_path = serializers.CharField(required=True)
 
-    def validate(self, data):
+    def validate(self, data: dict[str, Any]) -> dict[str, Any]:
         if data['from_path'] == data['to_path']:
             raise ValidationError('Source and target paths are identical')
         return data

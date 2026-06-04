@@ -1,9 +1,11 @@
 import pytest
 from storage.exceptions import ConflictError, FolderNotFoundError
+from django.contrib.auth.models import User  
+from pytest_mock import MockerFixture
 
 
 class TestUserFolderServiceCreate:
-    def test_create_folder_creates_placeholder(self, user, mocker):
+    def test_create_folder_creates_placeholder(self, user: User, mocker: MockerFixture) -> None:
         mock_minio = mocker.MagicMock()
         mock_minio.search.exists.return_value = False
         
@@ -17,7 +19,7 @@ class TestUserFolderServiceCreate:
         assert result['type'] == 'DIRECTORY'
         mock_minio.folders.create_placeholder.assert_called_once()
 
-    def test_create_folder_raises_conflict_if_exists(self, user, mocker):
+    def test_create_folder_raises_conflict_if_exists(self, user: User, mocker: MockerFixture) -> None:
         mock_minio = mocker.MagicMock()
         mock_minio.search.exists.return_value = True
         
@@ -31,7 +33,7 @@ class TestUserFolderServiceCreate:
         assert 'already exists' in str(exc_info.value.message).lower()
         mock_minio.folders.create_placeholder.assert_not_called()
 
-    def test_create_folder_raises_not_found_if_parent_missing(self, user, mocker):
+    def test_create_folder_raises_not_found_if_parent_missing(self, user: User, mocker: MockerFixture) -> None:
         mock_minio = mocker.MagicMock()
         mock_minio.search.exists.return_value = False
         
@@ -42,7 +44,7 @@ class TestUserFolderServiceCreate:
         with pytest.raises(FolderNotFoundError):
             folder_service.create('parent/child/')
     
-    def test_create_folder_with_trailing_dot(self, user, mocker):
+    def test_create_folder_with_trailing_dot(self, user: User, mocker: MockerFixture) -> None:
         mock_minio = mocker.MagicMock()
         mock_minio.search.exists.return_value = False
     
@@ -68,7 +70,7 @@ class TestUserFolderServiceCreate:
 
 
 class TestUserFolderServiceMove:
-    def test_move_folder_renames_successfully(self, user, mocker):
+    def test_move_folder_renames_successfully(self, user: User, mocker: MockerFixture) -> None:
         mock_minio = mocker.MagicMock()
         
         mock_minio.search.exists.side_effect = lambda key: key.endswith('old/')
@@ -87,7 +89,7 @@ class TestUserFolderServiceMove:
         mock_minio.files.copy.assert_called()
         mock_minio.folders.create_placeholder.assert_called()
 
-    def test_move_folder_raises_conflict_if_target_exists(self, user, mocker):
+    def test_move_folder_raises_conflict_if_target_exists(self, user: User, mocker: MockerFixture) -> None:
         mock_minio = mocker.MagicMock()
         mock_minio.search.exists.side_effect = lambda key: key.endswith('existing/') or key.endswith('old/')
         mock_minio.search.list_objects.return_value = []
@@ -99,7 +101,7 @@ class TestUserFolderServiceMove:
         with pytest.raises(ConflictError):
             folder_service.move('old/', 'existing/')
     
-    def test_move_folder_into_itself(self, user, mocker):
+    def test_move_folder_into_itself(self, user: User, mocker: MockerFixture) -> None:
         mock_minio = mocker.MagicMock()
         mock_minio.search.exists.return_value = True
     
@@ -113,7 +115,7 @@ class TestUserFolderServiceMove:
 
 
 class TestUserFolderServiceDelete:
-    def test_delete_folder_removes_recursive(self, user, mocker):
+    def test_delete_folder_removes_recursive(self, user: User, mocker: MockerFixture) -> None:
         mock_minio = mocker.MagicMock()
         
         from storage.services.filesystem_service import UserFolderService

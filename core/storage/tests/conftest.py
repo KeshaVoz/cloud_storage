@@ -9,7 +9,7 @@ class FakeUser:
 
 
 @pytest.fixture
-def user():
+def user() -> FakeUser:
     return FakeUser(id=1, username='testuser')
 
 

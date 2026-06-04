@@ -7,11 +7,11 @@ User = get_user_model()
 
 
 class UserServiceIntegrationTest(TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.client = Client()
         self.redis_client = redis.Redis(host='localhost', port=6379, db=1, password='redis')
 
-    def test_login_creates_session_in_redis(self):
+    def test_login_creates_session_in_redis(self) -> None:
         User.objects.create_user(username='testuser', password='testpass123')
         response = self.client.post('/login/', {
             'username': 'testuser',
@@ -27,7 +27,7 @@ class UserServiceIntegrationTest(TestCase):
                 break
         self.assertTrue(found)
 
-    def test_logout_clears_session_from_redis(self):
+    def test_logout_clears_session_from_redis(self) -> None:
         User.objects.create_user(username='testuser', password='testpass123')
         self.client.login(username='testuser', password='testpass123')
         session = self.client.session
@@ -49,7 +49,7 @@ class UserServiceIntegrationTest(TestCase):
                 break
         self.assertFalse(found)
 
-    def test_session_expiration_from_redis(self):
+    def test_session_expiration_from_redis(self) -> None:
         User.objects.create_user(username='testuser', password='testpass123')
         self.client.login(username='testuser', password='testpass123')
         session = self.client.session
@@ -72,7 +72,7 @@ class UserServiceIntegrationTest(TestCase):
                 break
         self.assertFalse(found)
 
-    def test_register_user_creates_db_record(self):
+    def test_register_user_creates_db_record(self) -> None:
         response = self.client.post('/register/', {
             'username': 'testuser',
             'password1': 'testpass123',
@@ -83,7 +83,7 @@ class UserServiceIntegrationTest(TestCase):
         self.assertTrue(user.is_authenticated)
         self.assertRedirects(response, '/')
 
-    def test_register_user_with_non_unique_username_raises_exception(self):
+    def test_register_user_with_non_unique_username_raises_exception(self) -> None:
         User.objects.create_user(username='existinguser', password='testpass123')
         response = self.client.post('/register/', {
             'username': 'existinguser',

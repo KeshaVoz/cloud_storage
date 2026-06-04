@@ -3,18 +3,20 @@ import boto3
 from botocore.exceptions import ClientError, NoCredentialsError
 from django.conf import settings
 from ..exceptions import ResourceNotFoundError, ValidationError
+from typing import Any
+from botocore.response import StreamingBody
 
 
 logger = logging.getLogger(__name__)
 
 
 class MinIOFileOperations:  
-    def __init__(self, client, bucket_name):
+    def __init__(self, client: Any, bucket_name: str) -> None:
         self.client = client
         self.bucket = bucket_name
 
 
-    def upload(self, object_name, file_data, content_type='application/octet-stream'):
+    def upload(self, object_name: str, file_data: bytes | Any, content_type: str = 'application/octet-stream') -> None:
         try:
             self.client.put_object(
                 Bucket=self.bucket,
@@ -29,7 +31,7 @@ class MinIOFileOperations:
             raise ValidationError("MinIO credentials not configured")
 
 
-    def download(self, object_name):
+    def download(self, object_name: str) -> StreamingBody:
         try:
             response = self.client.get_object(Bucket=self.bucket, Key=object_name)
             return response['Body']
@@ -42,7 +44,7 @@ class MinIOFileOperations:
             raise ValidationError("MinIO credentials not configured")
 
 
-    def delete(self, object_name):
+    def delete(self, object_name: str) -> None:
         try:
             self.client.delete_object(Bucket=self.bucket, Key=object_name)
         except ClientError as e:
@@ -54,7 +56,7 @@ class MinIOFileOperations:
             raise ValidationError("MinIO credentials not configured")
 
 
-    def copy(self, source_name, dest_name):
+    def copy(self, source_name: str, dest_name: str) -> None:
         try:
             copy_source = {'Bucket': self.bucket, 'Key': source_name}
             self.client.copy_object(
@@ -72,11 +74,11 @@ class MinIOFileOperations:
 
 
 class MinIOFolderOperations:
-    def __init__(self, client, bucket_name):
+    def __init__(self, client: Any, bucket_name: str) -> None:
         self.client = client
         self.bucket = bucket_name
 
-    def create_placeholder(self, folder_name):
+    def create_placeholder(self, folder_name: str) -> None:
         try:
             self.client.put_object(
                 Bucket=self.bucket,
@@ -89,7 +91,7 @@ class MinIOFolderOperations:
         except NoCredentialsError:
             raise ValidationError("MinIO credentials not configured")
 
-    def delete_recursive(self, prefix):
+    def delete_recursive(self, prefix: str) -> None:
         try:
             paginator = self.client.get_paginator('list_objects_v2')
             page_iterator = paginator.paginate(Bucket=self.bucket, Prefix=prefix)
@@ -110,11 +112,11 @@ class MinIOFolderOperations:
 
 
 class MinIOSearchOperations:
-    def __init__(self, client, bucket_name):
+    def __init__(self, client: Any, bucket_name: str) -> None:
         self.client = client
         self.bucket = bucket_name
 
-    def exists(self, object_name):
+    def exists(self, object_name: str) -> bool:
         try:
             self.client.head_object(Bucket=self.bucket, Key=object_name)
             return True
@@ -126,7 +128,7 @@ class MinIOSearchOperations:
         except NoCredentialsError:
             raise ValidationError("MinIO credentials not configured")
 
-    def list_objects(self, prefix, recursive=False, delimiter='/'):
+    def list_objects(self, prefix: str, recursive: bool = False, delimiter: str = '/') -> list[dict[str, Any]]:
         objects = []
         try:
             paginator = self.client.get_paginator('list_objects_v2')
@@ -152,7 +154,7 @@ class MinIOSearchOperations:
 
 
 class MinIOStorageService:
-    def __init__(self):
+    def __init__(self) -> None:
         self.s3_client = boto3.client(
             's3',
             endpoint_url=getattr(settings, 'AWS_S3_ENDPOINT_URL', None),
@@ -182,5 +184,5 @@ class MinIOStorageService:
         self.search = MinIOSearchOperations(self.s3_client, self.bucket_name)
     
 
-def get_minio_storage():
+def get_minio_storage() -> MinIOStorageService:
     return MinIOStorageService()

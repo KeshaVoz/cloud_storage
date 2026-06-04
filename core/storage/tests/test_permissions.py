@@ -1,9 +1,11 @@
 import pytest
 from storage.exceptions import ResourceNotFoundError
+from django.contrib.auth.models import User
+from pytest_mock import MockerFixture
 
 
 class TestUserIsolation:
-    def test_user_cannot_access_other_user_files(self, user, mocker):
+    def test_user_cannot_access_other_user_files(self, user: User, mocker: MockerFixture) -> None:
         mock_minio = mocker.MagicMock()
         mock_minio.search.exists.return_value = False
         mock_minio.files.download.side_effect = ResourceNotFoundError('File not found')
@@ -16,7 +18,7 @@ class TestUserIsolation:
         with pytest.raises(ResourceNotFoundError):
             our_service.download('other-user-file.txt')
 
-    def test_search_isolated_by_user_root(self, user, mocker):
+    def test_search_isolated_by_user_root(self, user: User, mocker: MockerFixture) -> None:
         mock_minio = mocker.MagicMock()
         our_root = f'user-{user.id}-files/'
         mock_minio.search.list_objects.return_value = [

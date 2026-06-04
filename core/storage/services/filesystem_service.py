@@ -3,10 +3,13 @@ import zipfile
 from .minio_service import get_minio_storage
 from ..utils import sanitize_key
 from ..exceptions import ValidationError, ResourceNotFoundError, FolderNotFoundError, ConflictError
+from typing import Any
+from django.core.files.uploadedfile import UploadedFile
+import datetime
 
 
 class SearchService: 
-    def __init__(self, user_root, storage):
+    def __init__(self, user_root: str, storage: Any) -> None:
         self.user_root = user_root
         self.storage = storage
 
@@ -14,7 +17,13 @@ class SearchService:
         return self.storage.search.exists(full_key)
     
     
-    def build_info(self, name, size=None, last_modified=None, is_dir=False):
+    def build_info(
+        self, 
+        name: str, 
+        size: int | None = None, 
+        last_modified: datetime.datetime | str | None = None, 
+        is_dir: bool = False
+    ) -> dict[str, Any]:
         clean_name = name.rstrip('/')
         
         if '/' in clean_name:
@@ -44,7 +53,7 @@ class SearchService:
                 'last_modified': last_mod
             }
     
-    def list_directory(self, relative_path=''):
+    def list_directory(self, relative_path: str = '') -> list[dict[str, Any]]:
         clean_path = sanitize_key(relative_path)
         prefix = f"{self.user_root}{clean_path}/" if clean_path else self.user_root
         
@@ -68,7 +77,7 @@ class SearchService:
         
         return results
 
-    def search(self, query: str):
+    def search(self, query: str) -> list[dict[str, Any]]:
         if not query or not query.strip():
             raise ValidationError('Search query is empty')
         
@@ -98,12 +107,12 @@ class SearchService:
 
 
 class UserFileService:   
-    def __init__(self, user_root, storage):
+    def __init__(self, user_root: str, storage: Any) -> None:
         self.user_root = user_root
         self.storage = storage
         self.search = SearchService(self.user_root, self.storage)
 
-    def upload(self, relative_path, file_obj, base_path=''):
+    def upload(self, relative_path: str, file_obj: UploadedFile, base_path: str = '') -> dict[str, Any]:
         clean_path = sanitize_key(relative_path)
         if not clean_path:
             raise ValidationError('Invalid file path')
@@ -125,17 +134,17 @@ class UserFileService:
         self.storage.files.upload(full_key, file_data, content_type=file_obj.content_type)
         return self.search.build_info(info_path, size=len(file_data), is_dir=False)
 
-    def download(self, relative_path):
+    def download(self, relative_path: str) -> Any:
         clean_path = sanitize_key(relative_path)
         full_key = f"{self.user_root}{clean_path}"
         return self.storage.files.download(full_key)
 
-    def delete(self, relative_path):
+    def delete(self, relative_path: str) -> None:
         clean_path = sanitize_key(relative_path)
         full_key = f"{self.user_root}{clean_path}"
         self.storage.files.delete(full_key)
 
-    def move(self, from_rel_path, to_rel_path):
+    def move(self, from_rel_path: str, to_rel_path: str) -> dict[str, Any]:
         clean_from = sanitize_key(from_rel_path)
         clean_to = sanitize_key(to_rel_path)
         full_from = f"{self.user_root}{clean_from}"
@@ -153,12 +162,12 @@ class UserFileService:
 
 
 class UserFolderService:    
-    def __init__(self, user_root, storage):
+    def __init__(self, user_root: str, storage: Any) -> None:
         self.user_root = user_root
         self.storage = storage
         self.search = SearchService(self.user_root, self.storage)
 
-    def create(self, relative_path):
+    def create(self, relative_path: str) -> dict[str, Any]:
         clean_path = sanitize_key(relative_path)
         if not clean_path.endswith('/'):
             clean_path += '/'
@@ -174,14 +183,14 @@ class UserFolderService:
         self.storage.folders.create_placeholder(full_key)
         return self.search.build_info(clean_path.rstrip('/'), is_dir=True)
 
-    def delete(self, relative_path):
+    def delete(self, relative_path: str) -> None:
         clean_path = sanitize_key(relative_path)
         if not clean_path.endswith('/'):
             clean_path += '/'
         full_prefix = f"{self.user_root}{clean_path}"
         self.storage.folders.delete_recursive(full_prefix)
 
-    def move(self, from_rel_path, to_rel_path):
+    def move(self, from_rel_path: str, to_rel_path: str) -> dict[str, Any]:
         clean_from = sanitize_key(from_rel_path)
         clean_to = sanitize_key(to_rel_path)
         if not clean_from.endswith('/'):
@@ -214,7 +223,7 @@ class UserFolderService:
         
         return self.search.build_info(clean_to.rstrip('/'), is_dir=True)
 
-    def download_as_zip(self, relative_path):
+    def download_as_zip(self, relative_path: str) -> io.BytesIO:
         clean_path = sanitize_key(relative_path)
         if not clean_path.endswith('/'):
             clean_path += '/'
