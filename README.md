@@ -26,3 +26,12 @@ docker compose up -d
 ---
 
 **Stack**: Django · PostgreSQL · Redis · MinIO · Docker
+
+
+### 4. Running Tests
+
+To run the test suite inside the Docker container, use the following command:
+
+```bash
+docker compose exec backend pytest
+```
