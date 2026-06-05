@@ -30,7 +30,7 @@ class LoginSerializer(serializers.Serializer):
 
 
 class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, min_length=8)
+    password = serializers.CharField(write_only=True, min_length=5)
     username = serializers.CharField(
     min_length=3,
     validators=[UniqueValidator(queryset=User.objects.all(), message="Username is already taken")]
